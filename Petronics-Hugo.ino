@@ -5,35 +5,65 @@
 EchoSensor Echo;
 LinienSensor LenkungSensor;
 Motor LeftMotor, RightMotor;
+#define MAX_SPEED 256
+#define STEER_SPEED 100
+
+bool steerLeft, steerRight;
 
 void setup() {
-    Serial.begin(9600);
+  Serial.begin(9600);
 
-    Echo.Init(3, 4);
-    //LenkungSensor.Init(1, 2, 3);
+  Echo.Init(3, 4);
+  LenkungSensor.Init(1, 2, 3);
 
-    LeftMotor.Init(10, 9, 8);
-    RightMotor.Init(5, 6, 7);
-    LeftMotor.SetDirection(true);
-    RightMotor.SetDirection(true);
-    
+  LeftMotor.Init(10, 9, 8);
+  RightMotor.Init(5, 6, 7);
+  LeftMotor.SetDirection(true);
+  RightMotor.SetDirection(true);
 }
 
 
 void loop() {
-    long frontDistance = Echo.GetDistance(Metric::Centimeter);
-    Serial.print("FrontDistance: ");
-    Serial.print(frontDistance);
-    Serial.print("                       ");
+  long frontDistance = Echo.GetDistance(Metric::Centimeter);
+  Serial.print("FrontDistance: ");
+  Serial.print(frontDistance);
+  Serial.print("                       ");
 
-    /*auto lenkungResult = LenkungSensor.Messure();
-    Serial.print("LenkungResult(LCR): ");
-    Serial.print(lenkungResult.Left);
-    Serial.print(", ");
-    Serial.print(lenkungResult.Center);
-    Serial.print(", ");
-    Serial.println(lenkungResult.Right);*/
+  auto lenkungResult = LenkungSensor.Messure();
+  Serial.print("LenkungResult(L, C, R): ");
+  Serial.print(lenkungResult.Left);
+  Serial.print(", ");
+  Serial.print(lenkungResult.Center);
+  Serial.print(", ");
+  Serial.println(lenkungResult.Right);
 
-    LeftMotor.SetSpeed(200);
-    RightMotor.SetSpeed(50);
+  if (IsLineWhite(lenkungResult.Center)) {
+    steerLeft = false;
+    steerRight = false;
+  }
+  else if  (IsLineWhite(lenkungResult.Left)) {
+    steerLeft = true;
+    steerRight = false;
+  }
+  else if (IsLineWhite(lenkungResult.Right)) {
+    steerLeft = false;
+    steerRight = true;
+  }
+
+  LeftMotor.SetSpeed(steerLeft ? STEER_SPEED : MAX_SPEED);
+  RightMotor.SetSpeed(steerLeft ? STEER_SPEED : MAX_SPEED);
+
+  if (!steerLeft && !steerRight)
+    Serial.println("Now going forward");
+  else if (steerLeft)
+    Serial.println("Now steering left");
+  else if (steerRight)
+    Serial.println("Now steering right");
+
+    delay(150);  // Only for Serial output reading, remove on release
+}
+
+inline bool IsLineWhite(int messuredValue) {
+#define IS_WHITE 60 // Testen!!!
+  return messuredValue >= IS_WHITE;
 }

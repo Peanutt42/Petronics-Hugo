@@ -19,7 +19,7 @@ class LinienSensor {
       result.Right = analogRead(m_PinA3);
       return result;
     }
-      
+
   private:
     int m_PinA1, m_PinA2, m_PinA3;
 };

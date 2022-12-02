@@ -23,9 +23,11 @@ class Motor {
 
     // 0 - 255
     void SetSpeed(int rotationSpeed) {
+      if (rotationSpeed < 0) rotationSpeed = 0;
+      else if (rotationSpeed > 255) rotationSpeed = 255;
       analogWrite(m_GSM, rotationSpeed);
     }
-    
+
   private:
     int m_GSM, m_In1, m_In2;
 };
