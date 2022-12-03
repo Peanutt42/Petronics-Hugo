@@ -37,15 +37,15 @@ void loop() {
   Serial.print(", ");
   Serial.println(lenkungResult.Right);
 
-  if (IsLineWhite(lenkungResult.Center)) {
+  if (IsLine(lenkungResult.Center)) {
     steerLeft = false;
     steerRight = false;
   }
-  else if  (IsLineWhite(lenkungResult.Left)) {
+  else if  (IsLine(lenkungResult.Left)) {
     steerLeft = true;
     steerRight = false;
   }
-  else if (IsLineWhite(lenkungResult.Right)) {
+  else if (IsLine(lenkungResult.Right)) {
     steerLeft = false;
     steerRight = true;
   }
@@ -63,7 +63,7 @@ void loop() {
     delay(150);  // Only for Serial output reading, remove on release
 }
 
-inline bool IsLineWhite(int messuredValue) {
-#define IS_WHITE 60 // Testen!!!
-  return messuredValue >= IS_WHITE;
+inline bool IsLine(int messuredValue) {
+#define IS_BLACK_THRESHOLD 60 // Testen!!!
+  return messuredValue < IS_BLACK_THRESHOLD;
 }
