@@ -1,69 +1,89 @@
 #include "EchoSensor.h"
 #include "LinienSensor.h"
 #include "Motor.h"
+#include "Car.h"
 
-EchoSensor Echo;
-LinienSensor LenkungSensor;
+#define MOTOR_STEER_SPEED 100 // The speed at which the side responsible for steering should move
+
+Car::Steering SteeringWheel;
+Car::Gas GasPedal;
+
+EchoSensor DistanceSensor;
+LinienSensor SteeringSensor;
 Motor LeftMotor, RightMotor;
-#define MAX_SPEED 256
-#define STEER_SPEED 100
-
-bool steerLeft, steerRight;
 
 void setup() {
   Serial.begin(9600);
 
-  Echo.Init(3, 4);
-  LenkungSensor.Init(1, 2, 3);
+  DistanceSensor.Init(3, 4);
+  SteeringSensor.Init(A1, A2, A3);
 
   LeftMotor.Init(10, 9, 8);
   RightMotor.Init(5, 6, 7);
-  LeftMotor.SetDirection(true);
-  RightMotor.SetDirection(true);
+  LeftMotor.SetDirection(MotorDirection::Forward);
+  RightMotor.SetDirection(MotorDirection::Forward);
 }
 
 
 void loop() {
-  long frontDistance = Echo.GetDistance(Metric::Centimeter);
+  // Print out sensor raw values for debugging
+  long frontDistance = DistanceSensor.GetDistance(Metric::Centimeter);
+  bool obsticalInTheWay = frontDistance < 5; // if front distance is less than 5cm away
   Serial.print("FrontDistance: ");
   Serial.print(frontDistance);
-  Serial.print("                       ");
 
-  auto lenkungResult = LenkungSensor.Messure();
-  Serial.print("LenkungResult(L, C, R): ");
+  auto lenkungResult = SteeringSensor.Messure();
+  Serial.print("    Raw Sensor: [L: ");
   Serial.print(lenkungResult.Left);
-  Serial.print(", ");
+  Serial.print(", C: ");
   Serial.print(lenkungResult.Center);
-  Serial.print(", ");
-  Serial.println(lenkungResult.Right);
+  Serial.print(", R: ");
+  Serial.print(lenkungResult.Right);
+  Serial.print(']');
 
-  if (IsLine(lenkungResult.Center)) {
-    steerLeft = false;
-    steerRight = false;
+  // Configure the Gaspedal and SteeringWheel based on sensor values
+  if (IsLine(lenkungResult.Center))
+    SteeringWheel = Car::Steering::Neutral;
+  else if  (IsLine(lenkungResult.Left))
+    SteeringWheel = Car::Steering::Left;
+  else if (IsLine(lenkungResult.Right))
+    SteeringWheel = Car::Steering::Right;
+
+  if (obsticalInTheWay) {
+    SteeringWheel = Car::Steering::Neutral;
+    GasPedal = Car::Gas::Still;
   }
-  else if  (IsLine(lenkungResult.Left)) {
-    steerLeft = true;
-    steerRight = false;
+
+  // Set Motor speeds based on GasPedal and SteeringWheel
+  int drivingDirectionMultiplier = 0;
+  if (GasPedal == Car::Gas::Forward) drivingDirectionMultiplier = 1;
+  else if (GasPedal == Car::Gas::Backward) drivingDirectionMultiplier = -1;
+
+  switch (SteeringWheel) {
+    default:
+    case Car::Steering::Neutral:
+      if (GasPedal == Car::Gas::Forward) Serial.println(" driving forward");
+      else if (GasPedal == Car::Gas::Backward) Serial.println(" driving backward");
+      else Serial.println(" standing still");
+
+      LeftMotor.SetSpeed(MAX_MOTOR_SPEED * drivingDirectionMultiplier);
+      RightMotor.SetSpeed(MAX_MOTOR_SPEED * drivingDirectionMultiplier);
+      break;
+    case Car::Steering::Left:
+      Serial.println(" driving left");
+      LeftMotor.SetSpeed(MOTOR_STEER_SPEED * drivingDirectionMultiplier);
+      RightMotor.SetSpeed(MAX_MOTOR_SPEED * drivingDirectionMultiplier);
+      break;
+    case Car::Steering::Right:
+      Serial.println(" driving right");
+      LeftMotor.SetSpeed(MAX_MOTOR_SPEED * drivingDirectionMultiplier);
+      RightMotor.SetSpeed(MOTOR_STEER_SPEED * drivingDirectionMultiplier);
+      break;
   }
-  else if (IsLine(lenkungResult.Right)) {
-    steerLeft = false;
-    steerRight = true;
-  }
 
-  LeftMotor.SetSpeed(steerLeft ? STEER_SPEED : MAX_SPEED);
-  RightMotor.SetSpeed(steerLeft ? STEER_SPEED : MAX_SPEED);
-
-  if (!steerLeft && !steerRight)
-    Serial.println("Now going forward");
-  else if (steerLeft)
-    Serial.println("Now steering left");
-  else if (steerRight)
-    Serial.println("Now steering right");
-
-    delay(150);  // Only for Serial output reading, remove on release
+  delay(50);  // only for debug!
 }
 
 inline bool IsLine(int messuredValue) {
-#define IS_BLACK_THRESHOLD 60 // Testen!!!
-  return messuredValue < IS_BLACK_THRESHOLD;
+  return messuredValue > 50; // needs to be tested and adjusted for every situation!
 }

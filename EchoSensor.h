@@ -1,3 +1,6 @@
+#ifndef ECHOSENSOR_H
+#define ECHOSENSOR_H
+
 enum class Metric {
   Centimeter,
   Meter,
@@ -36,3 +39,4 @@ class EchoSensor {
   private:
     int m_TriggerPin, m_EchoPin;
 };
+#endif // ECHOSENSOR_H

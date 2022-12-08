@@ -1,3 +1,6 @@
+#ifndef LINIENSENSOR_H
+#define LINIENSENSOR_H
+
 struct LinienSensorResult {
   int Left, Right, Center;
 };
@@ -23,3 +26,5 @@ class LinienSensor {
   private:
     int m_PinA1, m_PinA2, m_PinA3;
 };
+
+#endif // LINIENSENSOR_H
