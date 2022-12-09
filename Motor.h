@@ -10,26 +10,30 @@ class Motor {
   public:
     Motor() {}
 
-    void Init(int gsm, int in1, int in2) {
+    void Init(int gsm, int in1, int in2, bool builtinReverse = false) {
       m_GSM = gsm;
       m_In1 = in1;
       m_In2 = in2;
+      m_BuiltinReverse = builtinReverse;
 
-      pinMode(gsm, OUTPUT);
-      pinMode(in1, OUTPUT);
-      pinMode(in2, OUTPUT);
+      pinMode(m_GSM, OUTPUT);
+      pinMode(m_In1, OUTPUT);
+      pinMode(m_In2, OUTPUT);
+
+      SetDirection(MotorDirection::Forward);
     }
 
     void SetDirection(MotorDirection motorDirection) {
-      digitalWrite(m_In1, motorDirection == MotorDirection::Forward);
-      digitalWrite(m_In2, motorDirection == MotorDirection::Backward);
+      bool forward = motorDirection == MotorDirection::Forward;
+      if (m_BuiltinReverse) forward = !forward;
+      digitalWrite(m_In1, forward);
+      digitalWrite(m_In2, !forward);
     }
     void TurnOff() {
       digitalWrite(m_In1, LOW);
       digitalWrite(m_In2, LOW);
     }
 
-    // 0 - 255
 #define MAX_MOTOR_SPEED 255
 #define MIN_MOTOR_SPEED 0
     void SetSpeed(int rotationSpeed) {
@@ -40,6 +44,7 @@ class Motor {
 
   private:
     int m_GSM, m_In1, m_In2;
+    bool m_BuiltinReverse;
 };
 
 #endif // MOTOR_H

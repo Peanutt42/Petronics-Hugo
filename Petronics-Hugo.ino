@@ -1,16 +1,15 @@
 #include "EchoSensor.h"
 #include "LinienSensor.h"
 #include "Motor.h"
-#include "Car.h"
 
-#define MOTOR_STEER_SPEED 100 // The speed at which the side responsible for steering should move
-
-Car::Steering SteeringWheel;
-Car::Gas GasPedal;
+#define MOTOR_STEER_SPEED 50
 
 EchoSensor DistanceSensor;
 LinienSensor SteeringSensor;
 Motor LeftMotor, RightMotor;
+
+bool steerLeft, steerRight;
+bool drive;
 
 void setup() {
   Serial.begin(9600);
@@ -18,10 +17,8 @@ void setup() {
   DistanceSensor.Init(3, 4);
   SteeringSensor.Init(A1, A2, A3);
 
-  LeftMotor.Init(10, 9, 8);
-  RightMotor.Init(5, 6, 7);
-  LeftMotor.SetDirection(MotorDirection::Forward);
-  RightMotor.SetDirection(MotorDirection::Forward);
+  LeftMotor.Init(10, 9, 8, false);
+  RightMotor.Init(5, 6, 7, true);
 }
 
 
@@ -41,47 +38,42 @@ void loop() {
   Serial.print(lenkungResult.Right);
   Serial.print(']');
 
-  // Configure the Gaspedal and SteeringWheel based on sensor values
+  // Configure driving direction based on sensor values
   if (IsLine(lenkungResult.Center))
-    SteeringWheel = Car::Steering::Neutral;
-  else if  (IsLine(lenkungResult.Left))
-    SteeringWheel = Car::Steering::Left;
-  else if (IsLine(lenkungResult.Right))
-    SteeringWheel = Car::Steering::Right;
-
-  if (obsticalInTheWay) {
-    SteeringWheel = Car::Steering::Neutral;
-    GasPedal = Car::Gas::Still;
+    steerLeft = steerRight = false;
+  else if (IsLine(lenkungResult.Left)) {
+    steerLeft = true;
+    steerRight = false;
+  }
+  else if (IsLine(lenkungResult.Right)) {
+    steerRight = true;
+    steerLeft = false;
   }
 
-  // Set Motor speeds based on GasPedal and SteeringWheel
-  int drivingDirectionMultiplier = 0;
-  if (GasPedal == Car::Gas::Forward) drivingDirectionMultiplier = 1;
-  else if (GasPedal == Car::Gas::Backward) drivingDirectionMultiplier = -1;
+  drive = !obsticalInTheWay;
 
-  switch (SteeringWheel) {
-    default:
-    case Car::Steering::Neutral:
-      if (GasPedal == Car::Gas::Forward) Serial.println(" driving forward");
-      else if (GasPedal == Car::Gas::Backward) Serial.println(" driving backward");
-      else Serial.println(" standing still");
-
-      LeftMotor.SetSpeed(MAX_MOTOR_SPEED * drivingDirectionMultiplier);
-      RightMotor.SetSpeed(MAX_MOTOR_SPEED * drivingDirectionMultiplier);
-      break;
-    case Car::Steering::Left:
-      Serial.println(" driving left");
-      LeftMotor.SetSpeed(MOTOR_STEER_SPEED * drivingDirectionMultiplier);
-      RightMotor.SetSpeed(MAX_MOTOR_SPEED * drivingDirectionMultiplier);
-      break;
-    case Car::Steering::Right:
-      Serial.println(" driving right");
-      LeftMotor.SetSpeed(MAX_MOTOR_SPEED * drivingDirectionMultiplier);
-      RightMotor.SetSpeed(MOTOR_STEER_SPEED * drivingDirectionMultiplier);
-      break;
+  // Apply configured driving directions to motors
+  if (!drive) {
+    LeftMotor.SetSpeed(0);
+    RightMotor.SetSpeed(0);
   }
+  else if (!steerLeft && !steerRight) {
+    if (drive) Serial.println(" driving forward");
+    else Serial.println(" standing still");
 
-  delay(50);  // only for debug!
+    LeftMotor.SetSpeed(MAX_MOTOR_SPEED);
+    RightMotor.SetSpeed(MAX_MOTOR_SPEED);
+  }
+  else if (steerLeft) {
+    Serial.println(" driving left");
+    LeftMotor.SetSpeed(MOTOR_STEER_SPEED);
+    RightMotor.SetSpeed(MAX_MOTOR_SPEED);
+  }
+  else if (steerRight) {
+    Serial.println(" driving right");
+    LeftMotor.SetSpeed(MAX_MOTOR_SPEED);
+    RightMotor.SetSpeed(MOTOR_STEER_SPEED);
+  }
 }
 
 inline bool IsLine(int messuredValue) {
