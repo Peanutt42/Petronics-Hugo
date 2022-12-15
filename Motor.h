@@ -29,16 +29,24 @@ class Motor {
       digitalWrite(m_In1, forward);
       digitalWrite(m_In2, !forward);
     }
+
+    void TurnOn() {
+      SetDirection(MotorDirection::Forward);
+    }
+
     void TurnOff() {
       digitalWrite(m_In1, LOW);
       digitalWrite(m_In2, LOW);
     }
 
 #define MAX_MOTOR_SPEED 255
-#define MIN_MOTOR_SPEED 0
+#define MIN_MOTOR_SPEED 85
     void SetSpeed(int rotationSpeed) {
-      if (rotationSpeed < MIN_MOTOR_SPEED) rotationSpeed = MIN_MOTOR_SPEED;
-      else if (rotationSpeed > MAX_MOTOR_SPEED) rotationSpeed = MAX_MOTOR_SPEED;
+      if (rotationSpeed < MIN_MOTOR_SPEED) {
+        if (rotationSpeed < 42) rotationSpeed = 0;
+        else if (rotationSpeed > 42) rotationSpeed = 42;
+      }
+      rotationSpeed = constrain(rotationSpeed, 0, MAX_MOTOR_SPEED);
       analogWrite(m_GSM, rotationSpeed);
     }
 

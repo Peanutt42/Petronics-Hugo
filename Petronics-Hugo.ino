@@ -2,7 +2,8 @@
 #include "LinienSensor.h"
 #include "Motor.h"
 
-#define MOTOR_STEER_SPEED 50
+#define MOTOR_STEER_SPEED 0
+#define MOTOR_DRIVE_SPEED 100
 
 EchoSensor DistanceSensor;
 LinienSensor SteeringSensor;
@@ -17,8 +18,8 @@ void setup() {
   DistanceSensor.Init(3, 4);
   SteeringSensor.Init(A1, A2, A3);
 
-  LeftMotor.Init(10, 9, 8, false);
-  RightMotor.Init(5, 6, 7, true);
+  LeftMotor.Init(10, 9, 8, true);
+  RightMotor.Init(5, 6, 7, false);
 }
 
 
@@ -39,8 +40,10 @@ void loop() {
   Serial.print(']');
 
   // Configure driving direction based on sensor values
-  if (IsLine(lenkungResult.Center))
-    steerLeft = steerRight = false;
+  if (IsLine(lenkungResult.Center)) {
+    steerLeft = false;
+    steerRight = false;
+  }
   else if (IsLine(lenkungResult.Left)) {
     steerLeft = true;
     steerRight = false;
@@ -48,6 +51,9 @@ void loop() {
   else if (IsLine(lenkungResult.Right)) {
     steerRight = true;
     steerLeft = false;
+  }
+  if (IsLine(lenkungResult.Center) && IsLine(lenkungResult.Left) && IsLine(lenkungResult.Right)) {
+    steerLeft = steerRight = false;
   }
 
   drive = !obsticalInTheWay;
@@ -61,21 +67,21 @@ void loop() {
     if (drive) Serial.println(" driving forward");
     else Serial.println(" standing still");
 
-    LeftMotor.SetSpeed(MAX_MOTOR_SPEED);
-    RightMotor.SetSpeed(MAX_MOTOR_SPEED);
+    LeftMotor.SetSpeed(MOTOR_DRIVE_SPEED);
+    RightMotor.SetSpeed(MOTOR_DRIVE_SPEED);
   }
   else if (steerLeft) {
     Serial.println(" driving left");
-    LeftMotor.SetSpeed(MOTOR_STEER_SPEED);
-    RightMotor.SetSpeed(MAX_MOTOR_SPEED);
+    LeftMotor.SetSpeed(MOTOR_DRIVE_SPEED);
+    RightMotor.SetSpeed(MOTOR_STEER_SPEED);
   }
   else if (steerRight) {
     Serial.println(" driving right");
-    LeftMotor.SetSpeed(MAX_MOTOR_SPEED);
-    RightMotor.SetSpeed(MOTOR_STEER_SPEED);
+    LeftMotor.SetSpeed(MOTOR_STEER_SPEED);
+    RightMotor.SetSpeed(MOTOR_DRIVE_SPEED);
   }
 }
 
 inline bool IsLine(int messuredValue) {
-  return messuredValue > 50; // needs to be tested and adjusted for every situation!
+  return messuredValue > 150; // needs to be tested and adjusted for every situation!
 }
