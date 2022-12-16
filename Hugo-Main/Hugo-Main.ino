@@ -1,6 +1,6 @@
-#include "EchoSensor.h"
-#include "LinienSensor.h"
-#include "Motor.h"
+#include "libs/EchoSensor.h"
+#include "libs/LinienSensor.h"
+#include "libs/Motor.h"
 
 #define MOTOR_STEER_SPEED 0
 #define MOTOR_DRIVE_SPEED_L 85
