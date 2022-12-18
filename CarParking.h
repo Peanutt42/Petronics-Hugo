@@ -1,5 +1,5 @@
-#include "HardwareSerial.h"
-#include "Arduino.h"
+// Author: Peter Hennig
+
 #pragma once
 
 #include "EchoSensor.h"
@@ -12,8 +12,6 @@
 #define CAR_LENGHT_X_CM 18
 
 #define SAFTY_MESSURES_CM 5
-
-#define seconds() (millis() / 1000)
 
 void Park(Motor* leftMotor, Motor* rightMotor, EchoSensor* rightEchoSensor) {
   leftMotor->SetSpeed(100);

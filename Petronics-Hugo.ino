@@ -1,3 +1,5 @@
+// Author: Peter Hennig
+
 #include "LinienSensor.h"
 #include "EchoSensor.h"
 #include "Motor.h"

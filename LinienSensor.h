@@ -1,3 +1,5 @@
+// Author: Peter Hennig
+
 #pragma once
 
 struct LinienSensorResult {
