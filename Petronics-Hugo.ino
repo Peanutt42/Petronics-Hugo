@@ -1,8 +1,9 @@
 #include "LinienSensor.h"
 #include "EchoSensor.h"
 #include "Motor.h"
+#include "CarParking.h"
 
-// Pins
+#pragma region Pins
 #define PIN_BUTTON 2
 #define PIN_LDR A0
 #define PIN_LED 11
@@ -20,12 +21,13 @@
 #define PIN_MOTOR_R_GSM 10
 #define PIN_MOTOR_R_IN1 9
 #define PIN_MOTOR_R_IN2 8
+#pragma endregion // Pins
 
-// Configuration
-#define DEBUG false
+#pragma region Configuration
+#define DEBUG true
 #if DEBUG
 #define PRINT(msg, ...) Serial.print(msg, ##__VA_ARGS__)
-#define	PRINTLN(msg, ...) Serial.println(msg, ##__VA_ARGS__)
+#define PRINTLN(msg, ...) Serial.println(msg, ##__VA_ARGS__)
 #else
 #define PRINT(msg, ...)
 #define PRINTLN(msg, ...)
@@ -35,24 +37,29 @@
 #define MOTOR_DRIVE_SPEED_L 100
 #define MOTOR_DRIVE_SPEED_R 85
 
-// Sensors
+#define IS_LINE_THRESHOLD 150
+#pragma endregion // Configuration
+
+#pragma region Sensors
 LinienSensor SteeringSensor;
 Motor LeftMotor, RightMotor;
 EchoSensor DistanceSensor;
+#pragma endregion // Sensors
 
-// Driving Commands
+#pragma region Driving Commands
 bool steerLeft = false, steerRight = false;
 bool drive = true;
-bool obsticalInTheWay;
+bool obsticalInTheWay = false;
+#pragma endregion // Driving Commands
 
-#define IS_LINE_THRESHOLD 150
+int slowCycles, fastCycles; // loop cycle counters to do some things less often
 
 void setup() {
 #if DEBUG
   Serial.begin(9600);
 #endif
 
-  DistanceSensor.Init(PIN_ECHO_TRIGGER, PIN_ECHO_ECHO);
+  DistanceSensor.Init(PIN_ECHO_TRIGGER, PIN_ECHO_ECHO, 50);
 
   SteeringSensor.Init(PIN_STEERING_LEFT, PIN_STEERING_CENTER, PIN_STEERING_RIGHT);
 
@@ -61,22 +68,36 @@ void setup() {
 
   pinMode(PIN_BUTTON, INPUT_PULLUP);
   pinMode(PIN_LED, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
-int slowCycles, fastCycles;
 void loop() {
   drive = true;
 
-  bool stopButtonState = digitalRead(PIN_BUTTON) == LOW;
-  static bool stopButtonLastState;
-  static bool stop;
-  if (stopButtonState != stopButtonLastState) {
-    stopButtonLastState = stopButtonState;
-    if (stopButtonState)
-      stop = !stop;
-  }
-  if (stop) drive = false;
+  ReadButton();
 
+  UpdateCycledPrograms();
+
+  ReadSteeringSensor();
+
+  SetMotors();
+
+  BlinkProgramStatusLED();
+}
+
+void ReadButton() {
+  bool buttonState = digitalRead(PIN_BUTTON) == LOW;
+  static bool buttonLastState;
+  static bool stopCar;
+  if (buttonState != buttonLastState) {
+    buttonLastState = buttonState;
+    if (buttonState)
+      Park(&LeftMotor, &RightMotor, &DistanceSensor);  //stopCar = !stopCar;
+  }
+  if (stopCar) drive = false;
+}
+
+void UpdateCycledPrograms() {
   slowCycles++;
   fastCycles++;
   if (fastCycles > 3) fastCycles = 0;
@@ -85,7 +106,9 @@ void loop() {
   if (slowCycles == 0) UpdateNightLight();
 
   if (obsticalInTheWay) drive = false;
+}
 
+void ReadSteeringSensor() {
   LinienSensorResult lenkungResult = SteeringSensor.Messure();
   PRINT("    Raw Sensor: [L: ");
   PRINT(lenkungResult.Left);
@@ -114,8 +137,10 @@ void loop() {
     steerRight = false;
     drive = false;
   }
+}
 
-  // Apply configured driving directions to motors
+// Apply configured driving directions to motors
+void SetMotors() {
   if (!drive) {
     PRINTLN(" standing still");
     LeftMotor.SetSpeed(0);
@@ -136,9 +161,20 @@ void loop() {
 }
 
 void MessureDistanceSensor() {
-  obsticalInTheWay = DistanceSensor.GetDistance(Metric::Centimeter) < 10.0f;  
+  float distance = DistanceSensor.GetDistance(Metric::Centimeter);
+  obsticalInTheWay = distance < 10.0f;
+  PRINT("FrontDistance: ");
+  PRINT(distance);
 }
 
 void UpdateNightLight() {
-  digitalWrite(PIN_LED, analogRead(PIN_LDR) < 600);
+  int lightIntensity = analogRead(PIN_LDR);
+  int ledLightIntensity = map(constrain(lightIntensity, 600, 750), 600, 750, 255, 0);
+  analogWrite(PIN_LED, ledLightIntensity);
+}
+
+void BlinkProgramStatusLED() {
+  static bool programCycleHigh;
+  programCycleHigh = !programCycleHigh;
+  digitalWrite(LED_BUILTIN, programCycleHigh);
 }
