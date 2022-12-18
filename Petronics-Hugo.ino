@@ -12,6 +12,10 @@
 
 #define PIN_ECHO_TRIGGER 3
 #define PIN_ECHO_ECHO 4
+#define PIN_ECHO_POWER 12
+#define PIN_PARKING_ECHO_TRIGGER A4
+#define PIN_PARKING_ECHO_ECHO A5
+#define PIN_PARKING_ECHO_POWER 13
 
 #define PIN_STEERING_LEFT A1
 #define PIN_STEERING_CENTER A2
@@ -23,10 +27,10 @@
 #define PIN_MOTOR_R_GSM 10
 #define PIN_MOTOR_R_IN1 9
 #define PIN_MOTOR_R_IN2 8
-#pragma endregion // Pins
+#pragma endregion  // Pins
 
 #pragma region Configuration
-#define DEBUG true
+#define DEBUG false
 #if DEBUG
 #define PRINT(msg, ...) Serial.print(msg, ##__VA_ARGS__)
 #define PRINTLN(msg, ...) Serial.println(msg, ##__VA_ARGS__)
@@ -40,21 +44,21 @@
 #define MOTOR_DRIVE_SPEED_R 85
 
 #define IS_LINE_THRESHOLD 150
-#pragma endregion // Configuration
+#pragma endregion  // Configuration
 
 #pragma region Sensors
 LinienSensor SteeringSensor;
 Motor LeftMotor, RightMotor;
-EchoSensor DistanceSensor;
-#pragma endregion // Sensors
+EchoSensor DistanceSensor, ParkingSensor;
+#pragma endregion  // Sensors
 
 #pragma region Driving Commands
 bool steerLeft = false, steerRight = false;
 bool drive = true;
 bool obsticalInTheWay = false;
-#pragma endregion // Driving Commands
+#pragma endregion  // Driving Commands
 
-int slowCycles, fastCycles; // loop cycle counters to do some things less often
+int slowCycles, fastCycles;  // loop cycle counters to do some things less often
 
 void setup() {
 #if DEBUG
@@ -62,6 +66,7 @@ void setup() {
 #endif
 
   DistanceSensor.Init(PIN_ECHO_TRIGGER, PIN_ECHO_ECHO, 50);
+  ParkingSensor.Init(PIN_PARKING_ECHO_TRIGGER, PIN_PARKING_ECHO_ECHO, 50);
 
   SteeringSensor.Init(PIN_STEERING_LEFT, PIN_STEERING_CENTER, PIN_STEERING_RIGHT);
 
@@ -70,6 +75,10 @@ void setup() {
 
   pinMode(PIN_BUTTON, INPUT_PULLUP);
   pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_ECHO_POWER, OUTPUT);
+  digitalWrite(PIN_ECHO_POWER, HIGH);
+  pinMode(PIN_PARKING_ECHO_POWER, OUTPUT);
+  digitalWrite(PIN_PARKING_ECHO_POWER, LOW);
   pinMode(LED_BUILTIN, OUTPUT);
 }
 
@@ -93,8 +102,13 @@ void ReadButton() {
   static bool stopCar;
   if (buttonState != buttonLastState) {
     buttonLastState = buttonState;
-    if (buttonState)
-      Park(&LeftMotor, &RightMotor, &DistanceSensor);  //stopCar = !stopCar;
+    if (buttonState) {
+      digitalWrite(PIN_ECHO_POWER, LOW);
+      digitalWrite(PIN_PARKING_ECHO_POWER, HIGH);
+      Park(&LeftMotor, &RightMotor, &ParkingSensor);  //stopCar = !stopCar;      
+      digitalWrite(PIN_ECHO_POWER, HIGH);
+      digitalWrite(PIN_PARKING_ECHO_POWER, LOW);
+    }
   }
   if (stopCar) drive = false;
 }
