@@ -18,6 +18,7 @@ public:
     m_PinRight = pinRight;
   }
 
+  // Read the sensor data
   const LinienSensorResult Messure() {
     return LinienSensorResult{ analogRead(m_PinLeft), analogRead(m_PinRight), analogRead(m_PinCenter) };
   }

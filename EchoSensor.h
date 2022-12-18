@@ -24,15 +24,17 @@ public:
 #define ECHO_SPEED_CM_IN_MS 0.034
 #define ECHO_SPEED_M_IN_MS 0.00034
   float GetDistance(Metric metric) {
+    // Send out echo wave
     digitalWrite(m_TriggerPin, LOW);
     delay(5);
     digitalWrite(m_TriggerPin, HIGH);
     delay(10);
     digitalWrite(m_TriggerPin, LOW);
 
+    // Wait till it comes back
     long duration = pulseIn(m_EchoPin, HIGH);
     if (duration == 0) return m_MaxDistance;
-    float distance = (float)(duration / 2);  // RTT
+    float distance = (float)(duration / 2); // RTT (Round trip time)
     switch (metric) {
       default:
       case Metric::Centimeter: return distance * ECHO_SPEED_CM_IN_MS;

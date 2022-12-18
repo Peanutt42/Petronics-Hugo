@@ -31,7 +31,8 @@ void Park(Motor* leftMotor, Motor* rightMotor, EchoSensor* rightEchoSensor) {
     static float lastDistance = rightEchoSensor->GetDistance(Metric::Centimeter);
     float distance = rightEchoSensor->GetDistance(Metric::Centimeter);
     float diffrence = abs(distance - lastDistance);
-    Serial.println(diffrence);
+    PRINTLN(diffrence);
+    // Wait until we drive past a parking spot
     if (diffrence < CAR_LENGHT_X_CM) {
       lastDistance = distance;
       delay(150);
@@ -43,26 +44,31 @@ void Park(Motor* leftMotor, Motor* rightMotor, EchoSensor* rightEchoSensor) {
       float timeItTookToDrivePastSlot = millis() - start;
       int distanceCm = (timeItTookToDrivePastSlot / 1000) * DISTANCE_PER_SECOND_IN_CM_100_85_POWER;
       nextToPotentialSpot = false;
+
+      // Check if we would fit in the parking slot
       if (distanceCm > CAR_LENGHT_Y_CM + SAFTY_MESSURES_CM) {
-        Serial.print("Found Parking Slot! It took ");
-        Serial.print(timeItTookToDrivePastSlot / 1000.0f);
-        Serial.print("s to drive past it and it's ");
-        Serial.print(distanceCm);
-        Serial.println("cm");
+        PRINT("Found Parking Slot! It took ");
+        PRINT(timeItTookToDrivePastSlot / 1000.0f);
+        PRINT("s to drive past it and it's ");
+        PRINT(distanceCm);
+        PRINTLN("cm");
 
-        leftMotor->SetSpeed(0);
-        rightMotor->SetSpeed(0);
-
+        // 90° right backwards
         leftMotor->SetDirection(MotorDirection::Backward);
         leftMotor->SetSpeed(100);
+        rightMotor->SetSpeed(0);
         delay(800);
+        // some bit backwards
         rightMotor->SetDirection(MotorDirection::Backward);
         rightMotor->SetSpeed(85);
         delay(550);
+        // 90° left backwards
         leftMotor->SetSpeed(0);
         delay(680);
+        // tiny bit backwards
         leftMotor->SetSpeed(100);
         delay(100);
+        // Finished parking
         leftMotor->SetSpeed(0);
         leftMotor->SetDirection(MotorDirection::Forward);
         rightMotor->SetSpeed(0);

@@ -96,6 +96,7 @@ void loop() {
   BlinkProgramStatusLED();
 }
 
+// Read if button was pressed -> parking mode
 void ReadButton() {
   bool buttonState = digitalRead(PIN_BUTTON) == LOW;
   static bool buttonLastState;
@@ -103,6 +104,7 @@ void ReadButton() {
   if (buttonState != buttonLastState) {
     buttonLastState = buttonState;
     if (buttonState) {
+      delay(1000);
       digitalWrite(PIN_ECHO_POWER, LOW);
       digitalWrite(PIN_PARKING_ECHO_POWER, HIGH);
       Park(&LeftMotor, &RightMotor, &ParkingSensor);  //stopCar = !stopCar;      
@@ -113,6 +115,7 @@ void ReadButton() {
   if (stopCar) drive = false;
 }
 
+// Update programs that should run every 3./10. loop()-function
 void UpdateCycledPrograms() {
   slowCycles++;
   fastCycles++;
@@ -124,6 +127,7 @@ void UpdateCycledPrograms() {
   if (obsticalInTheWay) drive = false;
 }
 
+// Read SteeringSensor and decide in which direction to drive
 void ReadSteeringSensor() {
   LinienSensorResult lenkungResult = SteeringSensor.Messure();
   PRINT("    Raw Sensor: [L: ");
@@ -155,7 +159,7 @@ void ReadSteeringSensor() {
   }
 }
 
-// Apply configured driving directions to motors
+// Apply driving direction to motors
 void SetMotors() {
   if (!drive) {
     PRINTLN(" standing still");
@@ -176,6 +180,7 @@ void SetMotors() {
   }
 }
 
+// Read out the Front-DistanceSensor
 void MessureDistanceSensor() {
   float distance = DistanceSensor.GetDistance(Metric::Centimeter);
   obsticalInTheWay = distance < 10.0f;
@@ -183,12 +188,14 @@ void MessureDistanceSensor() {
   PRINT(distance);
 }
 
+// Set Night-Light based on how bright it is outside
 void UpdateNightLight() {
   int lightIntensity = analogRead(PIN_LDR);
   int ledLightIntensity = map(constrain(lightIntensity, 600, 750), 600, 750, 255, 0);
   analogWrite(PIN_LED, ledLightIntensity);
 }
 
+// Toggle the builtin-Led every time the loop()-function runs once (performance-profiling)
 void BlinkProgramStatusLED() {
   static bool programCycleHigh;
   programCycleHigh = !programCycleHigh;

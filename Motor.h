@@ -24,6 +24,7 @@ public:
     SetDirection(MotorDirection::Forward);
   }
 
+  // Set the direction of the motor (forward/backward)
   void SetDirection(MotorDirection motorDirection) {
     bool forward = motorDirection == MotorDirection::Forward;
     if (m_BuiltinReverse) forward = !forward;
@@ -42,6 +43,7 @@ public:
 
 #define MAX_MOTOR_SPEED 255
 #define MIN_MOTOR_SPEED 85
+  // Set target speed of the motor (0, 85 - 255)
   void SetSpeed(int rotationSpeed) {
     if (rotationSpeed < MIN_MOTOR_SPEED) {
       if (rotationSpeed < 42) rotationSpeed = 0;
