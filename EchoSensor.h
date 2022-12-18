@@ -10,9 +10,10 @@ class EchoSensor {
 public:
   EchoSensor() {}
 
-  void Init(int triggerPin, int echoPin) {
+  void Init(int triggerPin, int echoPin, int maxDistance) {
     m_TriggerPin = triggerPin;
     m_EchoPin = echoPin;
+    m_MaxDistance = maxDistance;
     pinMode(m_EchoPin, INPUT);
     pinMode(m_TriggerPin, OUTPUT);
   }
@@ -28,6 +29,7 @@ public:
     digitalWrite(m_TriggerPin, LOW);
 
     long duration = pulseIn(m_EchoPin, HIGH);
+    if (duration == 0) return m_MaxDistance;
     float distance = (float)(duration / 2);  // RTT
     switch (metric) {
       default:
@@ -37,6 +39,14 @@ public:
     }
   }
 
+  int GetMaxDistance() const {
+    return m_MaxDistance;
+  }
+  void SetMaxDistance(int newMaxDistance) {
+    m_MaxDistance = newMaxDistance;
+  }
+
 private:
   int m_TriggerPin, m_EchoPin;
+  int m_MaxDistance;
 };
