@@ -21,6 +21,11 @@
   rightMotor->SetSpeed(0); \
   delay(time)
 
+#if !defined(PRINT) && !defined(PRINTLN)
+#define PRINT(msg, ...)
+#define PRINTLN(msg, ...)
+#endif
+
 void Park(Motor* leftMotor, Motor* rightMotor, EchoSensor* rightEchoSensor) {
   leftMotor->SetSpeed(CAR_DRIVE_L);
   rightMotor->SetSpeed(CAR_DRIVE_R);
@@ -30,10 +35,10 @@ void Park(Motor* leftMotor, Motor* rightMotor, EchoSensor* rightEchoSensor) {
     // Calculate diffrence between last and new Distance parallel to the car
     static float lastDistance = rightEchoSensor->GetDistance(Metric::Centimeter);
     float distance = rightEchoSensor->GetDistance(Metric::Centimeter);
-    float diffrence = abs(distance - lastDistance);
-    PRINTLN(diffrence);
+    float difference = abs(distance - lastDistance);
+    PRINTLN(difference);
     // Wait until we drive past a parking spot
-    if (diffrence < CAR_LENGHT_X_CM) {
+    if (difference < CAR_LENGHT_X_CM) {
       lastDistance = distance;
       delay(150);
       continue;

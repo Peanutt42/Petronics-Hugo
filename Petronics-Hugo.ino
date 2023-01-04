@@ -58,7 +58,7 @@ bool drive = true;
 bool obsticalInTheWay = false;
 #pragma endregion  // Driving Commands
 
-int slowCycles, fastCycles;  // loop cycle counters to do some things less often
+int updateDistanceSensorCycles;
 
 void setup() {
 #if DEBUG
@@ -89,6 +89,8 @@ void loop() {
 
   UpdateCycledPrograms();
 
+  UpdateNightLight();
+
   ReadSteeringSensor();
 
   SetMotors();
@@ -117,12 +119,9 @@ void ReadButton() {
 
 // Update programs that should run every 3./10. loop()-function
 void UpdateCycledPrograms() {
-  slowCycles++;
-  fastCycles++;
-  if (fastCycles > 3) fastCycles = 0;
-  if (slowCycles > 10) slowCycles = 0;
-  if (fastCycles == 0) MessureDistanceSensor();
-  if (slowCycles == 0) UpdateNightLight();
+  updateDistanceSensorCycles++;
+  if (updateDistanceSensorCycles > 3) updateDistanceSensorCycles = 0;
+  if (updateDistanceSensorCycles == 0) MessureDistanceSensor();
 
   if (obsticalInTheWay) drive = false;
 }
