@@ -21,10 +21,6 @@
   rightMotor->SetSpeed(0); \
   delay(time)
 
-#if !defined(PRINT) && !defined(PRINTLN)
-#define PRINT(msg, ...)
-#define PRINTLN(msg, ...)
-#endif
 
 void Park(Motor* leftMotor, Motor* rightMotor, EchoSensor* rightEchoSensor) {
   leftMotor->SetSpeed(CAR_DRIVE_L);

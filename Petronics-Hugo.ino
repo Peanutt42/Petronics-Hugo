@@ -3,7 +3,6 @@
 #include "LinienSensor.h"
 #include "EchoSensor.h"
 #include "Motor.h"
-#include "CarParking.h"
 
 #pragma region Pins
 #define PIN_BUTTON 2
@@ -39,9 +38,11 @@
 #define PRINTLN(msg, ...)
 #endif
 
+#include "CarParking.h"
+
 #define MOTOR_STEER_SPEED 0
-#define MOTOR_DRIVE_SPEED_L 100
-#define MOTOR_DRIVE_SPEED_R 85
+#define MOTOR_DRIVE_SPEED_L 110//100
+#define MOTOR_DRIVE_SPEED_R 95//85
 
 #define IS_LINE_THRESHOLD 150
 #pragma endregion  // Configuration
@@ -57,6 +58,9 @@ bool steerLeft = false, steerRight = false;
 bool drive = true;
 bool obsticalInTheWay = false;
 #pragma endregion  // Driving Commands
+
+enum class LEDMode { Night, Warning };
+LEDMode ledMode = LEDMode::Warning;
 
 int updateDistanceSensorCycles;
 
@@ -89,7 +93,7 @@ void loop() {
 
   UpdateCycledPrograms();
 
-  UpdateNightLight();
+  UpdateLight();
 
   ReadSteeringSensor();
 
@@ -103,9 +107,14 @@ void ReadButton() {
   bool buttonState = digitalRead(PIN_BUTTON) == LOW;
   static bool buttonLastState;
   static bool stopCar;
-  if (buttonState != buttonLastState) {
-    buttonLastState = buttonState;
-    if (buttonState) {
+  if (buttonState) {
+    unsigned long start = millis();
+    while (digitalRead(PIN_BUTTON) == LOW) {}
+    unsigned long elapsed = millis() - start;
+    if (elapsed <= 1000) ledMode = LEDMode::Night;
+    else if (elapsed <= 2000) ledMode = LEDMode::Warning;
+    else if (elapsed <= 3000)
+    {
       delay(1000);
       digitalWrite(PIN_ECHO_POWER, LOW);
       digitalWrite(PIN_PARKING_ECHO_POWER, HIGH);
@@ -113,11 +122,18 @@ void ReadButton() {
       digitalWrite(PIN_ECHO_POWER, HIGH);
       digitalWrite(PIN_PARKING_ECHO_POWER, LOW);
     }
+    else if (elapsed <= 4000) {
+      unsigned long donutStart = millis();
+      LeftMotor.SetSpeed(255);
+      RightMotor.SetSpeed(0);
+      while (millis() - donutStart >= 5000) {}
+    }
   }
+  
   if (stopCar) drive = false;
 }
 
-// Update programs that should run every 3./10. loop()-function
+// Update programs that should run every 3. loop()-function
 void UpdateCycledPrograms() {
   updateDistanceSensorCycles++;
   if (updateDistanceSensorCycles > 3) updateDistanceSensorCycles = 0;
@@ -188,10 +204,32 @@ void MessureDistanceSensor() {
 }
 
 // Set Night-Light based on how bright it is outside
-void UpdateNightLight() {
-  int lightIntensity = analogRead(PIN_LDR);
-  int ledLightIntensity = map(constrain(lightIntensity, 600, 750), 600, 750, 255, 0);
-  analogWrite(PIN_LED, ledLightIntensity);
+void UpdateLight() {
+  LEDMode prevLedMode = ledMode;
+  if (obsticalInTheWay) ledMode = LEDMode::Warning;
+  switch (ledMode) {
+    default:
+    case LEDMode::Night:
+    {
+      int lightIntensity = analogRead(PIN_LDR);
+      int ledLightIntensity = map(constrain(lightIntensity, 600, 750), 600, 750, 255, 0);
+      analogWrite(PIN_LED, ledLightIntensity);
+      break;
+    }
+    case LEDMode::Warning:
+    {
+      static unsigned long nextSwitch = 0;
+      static bool ledOn = true;
+      if (millis() >= nextSwitch) {
+        ledOn = !ledOn;
+        nextSwitch = millis() + 250;
+        analogWrite(PIN_LED, ledOn ? 255 : 0);
+      }
+      break;
+    }
+  }
+
+  ledMode = prevLedMode;
 }
 
 // Toggle the builtin-Led every time the loop()-function runs once (performance-profiling)
